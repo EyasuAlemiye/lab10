@@ -1,0 +1,189 @@
+class Ruta:
+    def __init__(self, atom="( )", num=1):
+        self.atom = atom
+        self.num = num
+        self.next = None
+        self.down = None
+#readgroup
+from wordqueue import LinkedQ
+from molgrafik import *
+#DENNA GER KORREKTA UTSKRIFTER MED KATTISKODEN
+class Syntaxfel(Exception):
+    pass
+
+atomlagring = LinkedQ()
+def readformel():
+    readmol() 
+w=0
+def readmol():
+    global w
+    molde=readgroup()
+    if q.peek() != "&":
+        readmol()
+#    if q.isEmpty():
+#        return molde
+högerparantes=0
+vänsterparantes=högerparantes
+def readgroup():
+    rutan = Ruta() 
+    
+    #Fall 1
+    if q.peek().isnumeric() == True:
+        raise Syntaxfel(f'Felaktig gruppstart vid radslutet {restutskrivare()}')   #Gruppen kan aldrig börja med en siffra
+    #Fall 2
+    if q.peek() == "(":
+        högerparantes=q.dequeue()
+        #readmol()                                                                 #Om vi får ( innebär det att det är en molekyl          
+        while q.peek() != ")":                                                          #läser in tills vi når slutparantesen                                                                
+            if q.peek() == "&":                                                         #Om kön blir tom innan slutparantes är något fel
+                raise Syntaxfel(f'Saknad högerparentes vid radslutet {restutskrivare()}')
+            #rutan.down=readmol() 
+            readgroup()
+                                                                                         
+        vänsterparantes=q.dequeue()                               
+        if q.peek().isnumeric() != True:                                            #Om tecknet inte är en siffra är det felaktigt
+            raise Syntaxfel(f'Saknad siffra vid radslutet {restutskrivare()}')
+        else:
+            #lagra mol i rutan.down
+            antalnummer=int(readnum())
+            rutan.num=antalnummer
+             
+    #Fall 3
+    elif q.peek() == ")":
+        raise Syntaxfel(f'Felaktig gruppstart vid radslutet {restutskrivare()}')   #Gruppen kan aldrig börja med en )
+
+    #Fall 4
+    if q.peek().isalpha() == True: #Om gruppen börjar med en bokstav är det en atom   
+        if q.peek().islower() == True:     #Endast en atom om den börjar med stor bokstav, om liten är det felaktigt
+            raise Syntaxfel(f'Saknad stor bokstav vid radslutet {restutskrivare()}')
+        if q.peek().isupper() == True:     #Om bokstaven är stor är det en korrekt gruppstart
+            lagrapeek=q.peek()
+            rutan.atom=readatom()
+
+            print(q.peek(), 'nosta ek', rutan.atom)
+            if isinstance(q.peek(), str) and q.peek()!=None:
+                #while q.peek()!=None:
+                    rutan.atom+=lagrapeek
+                    print(rutan.atom, 'Funkar detta')
+        try:
+            antalnummer=int(readnum())
+            rutan.num=antalnummer
+        except (ValueError, TypeError):# None #Runda 1: None, alltså efter Ag, och (NO)3 kvarstår
+            högerparantes=1
+            if q.peek()=='(' or högerparantes=='(':
+                None
+            else:
+                None
+            
+
+def readnum():
+    #Om siffran är en 1a
+    if q.peek() == "1":
+        s=q.dequeue()
+        print(s,90)
+        if q.peek().isnumeric() == False:               #Om tecknet efter 1an INTE ÄR en siffra är det syntaxfel
+            raise Syntaxfel(f'För litet tal vid radslutet {restutskrivare()}')
+        if q.peek().isnumeric() == True:                #Om tecknet efter 1an ÄR en siffra är det ok
+            a=kolla_sifferföljden()    
+            print(a,0)         
+            return s+a 
+    #Om siffran är en 0a        
+    if q.peek() == "0":         #En 0a som första siffra i följden är alltid felaktigt
+        q.dequeue()                                 
+        raise Syntaxfel(f'För litet tal vid radslutet {restutskrivare()}')
+    #Om siffran är större än 1
+    else: 
+        tomstr=""
+        a=kolla_sifferföljden(tomstr)
+        return a
+
+
+def kolla_sifferföljden(tomstr):
+    if q.peek().isnumeric() == True:
+        a=q.dequeue()
+        tomstr=tomstr+a
+        return kolla_sifferföljden(tomstr)
+    else:
+        return tomstr
+    
+def readatom():
+    atomlagring = LinkedQ()
+    O=q.dequeue()
+    print(O, 'osamarbete')
+    atomlagring.enqueue(O)        #lagrar den första stora bokstaven
+    if q.peek().isalpha() == True:          #kollar om nästa tecken är en bokstav          
+        if q.peek().islower():
+            atomlagring.enqueue(q.dequeue())
+            ess=atomcheck(atomlagring)
+            print(ess,2244) #Trasig. Måste returnera somliga atomer.
+            return ess
+        else:
+            return O
+        
+atomstr = ""
+def atomcheck(atomlagring):
+    global atomstr
+    #print("ATOMCHECK")
+    atomlista= ["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y",
+            "Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir",
+            "Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn","Fl","Lv"]
+ 
+    while atomlagring.size() != 0:
+        atomstr += atomlagring.dequeue()
+    if atomstr in atomlista:
+        print(atomstr, 52)
+        return atomstr #atomlagring
+    #Nu vet vi att atomen vi testa är korrekt. Nu tömmer vi därför atomlagringen och returnerar den
+    else:
+        raise Syntaxfel(f'Okänd atom vid radslutet {restutskrivare()}')
+
+def restutskrivare():
+    radslut = ""
+    while not q.peek() =="&":
+        radslut += str(q.dequeue())
+    return radslut
+########################################################################################################################################################################
+q = LinkedQ()
+def dela_upp_molekyl(molekyl):
+        global q
+        #q = LinkedQ()
+        for varje_tecken in molekyl:
+                q.enqueue(varje_tecken)
+        q.enqueue("&")
+        return kollamolekyl()
+        
+def kollamolekyl():
+    try:
+        mol=readformel()
+        return("Formeln är syntaktiskt korrekt")
+    except Syntaxfel as fel:
+        return(str(fel))
+
+
+
+
+
+lista2= ["Na", "H2O", "Si(C3(COOH)2)4(H2O)7", "Na332", "#" ]
+#lista2 = ["C(Xx4)5", "C(OH4)C", "C(OH4C", "H2O)Fe", "H0", "H1C", "H02C", "Nacl", "a", "(Cl)2)3", ")", "2", "#"  ]
+
+
+
+
+#FÖR ATT LÄSA FRÅN STDIN - KATTIS-KOMPATIBEL
+def main(): 
+    #for varje_rad in lista2: #in stdin
+        #if varje_rad.strip() == "#":
+    #        break            
+    #    else:
+    #        varje_rad = varje_rad.strip()
+    resultat = dela_upp_molekyl('(NO)2')
+    print(resultat,'op')
+    if resultat=='Formeln är syntaktiskt korrekt':
+        pass
+        
+
+    
+
+if __name__ == "__main__":
+    main()
+
