@@ -1,9 +1,18 @@
+#DENNA FUNGERAR HELT OCH HÅLLET EXKL MOLEKYLVIKT DOCK
 from wordqueue import *
-from sys import stdin
 from molgrafik import *
+#_______________________________________________________________________________
+
+class Syntaxfel(Exception):
+    pass
+atomlagring = LinkedQ()
+atomviktssparare = LinkedQ()
+
+
+tempkö=LinkedQ()
+
 
 class Ruta:
-
     def __init__(self, atom = "()", num = 1):
         self.atom = atom
         self.num = num
@@ -12,11 +21,6 @@ class Ruta:
 
 
 
-
-class Syntaxfel(Exception):
-    pass
-atomlagring = LinkedQ()
-
 def readformel(q):
     print("1a")
     mol = readmol(q) 
@@ -24,56 +28,104 @@ def readformel(q):
 
 
 
-
 def readmol(q):
     print("50a")
     mol = readgroup(q)
+
     if q.peek() != "&":
-        print("51a")
-        mol.next = readmol(q)
-        print("000")
-        print(mol.next,"51b")
-    print("52a")
+        #detta är vägvisaren
+        print("rad 37")
+        down_eller_next = "next"
+        
+        if down_eller_next == "next":
+            print("120a")
+            mol.next = readmol(q)
+            print("rad 43") #det som lagrats i rad33 lagras sen
+        if down_eller_next == "down":
+            print("121a")
+            mol.down = readmol(q)
+        print("52a")
     return mol
-    
-    
-
-värde='#'
-
+s=0
+u=[]
+parantesochnummergren=[]
+summativgren=[]
 def readgroup(q):
+    global u
+    global s
+    global summativgren
+    global parantesochnummergren
     print("4a")
     rutan = Ruta()
+    gren = []
+    grenlängd = 0
     
-
+    
+    
     #Fall 1
     if q.peek().isnumeric() == True:
         print("5a")
         raise Syntaxfel(f'Felaktig gruppstart vid radslutet {restutskrivare(q)}')
     
+    
     #Fall 2
     if q.peek() == "(":
         print("6a")
-        q.dequeue()  #NO)3
-        lagradpeek=q.peek()      
-        while q.peek() != ")":   
+        avköadstartparantes=q.dequeue()
+        atomviktssparare.enqueue("()")
+        atomviktssparare.enqueue("&")
+        parantesochnummergren.append(avköadstartparantes) 
+        temp.append("()")
+        print(temp, "tempo2")   
+        while q.peek() != ")":
             print("7a")                                                               
             if q.peek() == "&":    
                 print("8a")
                 raise Syntaxfel(f'Saknad högerparentes vid radslutet {restutskrivare(q)}')
-            
+            print("77a")
+            gren.append(readgroup(q)) 
+            s=[]
+            for i in gren:
+                s.append(i.atom)
+            print(s, "är atomerna i listan...")
+                   
 
-            print("80a")
-            rutan.down = readgroup(q) 
-            print("80b",rutan.down)
-                                                                                         
-        q.dequeue()                               
+            if len(gren) > 1: #len(gren)=2
+                print("79a")
+                print(grenlängd, " är vår grenlängd")
+                gren[grenlängd].next = gren[grenlängd+1]#vi #caseett: O är next till N, N-O
+                 
+
+                grenlängd += 1
+            if len(gren) == 1:
+                print("78a")
+                rutan.down = gren[0] 
+                
+
+
+                
+        q.dequeue()           
         if q.peek().isnumeric() != True: 
             print("9a")
             raise Syntaxfel(f'Saknad siffra vid radslutet {restutskrivare(q)}')
         else:
             print("60")
+            
             rutan.num = readnum(q)
-            print(rutan.num, "60b")
+            #for i in range(len(temp)):
+            #    if temp[i]=="()":
+
+            #        temp[i+1]=rutan.num
+                
+            
+            u.append(rutan.num)
+            print(temp, "tempo4", u)
+            
+
+            multiplicatorparantes=rutan.num
+            print(rutan.num, " är vårt nummer")
+            parantesochnummergren.append(multiplicatorparantes)  
+    
             return rutan 
 
     
@@ -82,50 +134,58 @@ def readgroup(q):
         print("10a")
         raise Syntaxfel(f'Felaktig gruppstart vid radslutet {restutskrivare(q)}')
 
-    global värde
+
     #Fall 4
-    if q.peek().isalpha() == True: #kolla om första element i kön är bokstav
+    if q.peek().isalpha() == True:
         print("11a") 
         if q.peek().islower() == True:
             print("12a")
             raise Syntaxfel(f'Saknad stor bokstav vid radslutet {restutskrivare(q)}')
-        if q.peek().isupper() == True:#kollar om första element i bokstav är stor bokstav (=A)
+        if q.peek().isupper() == True:
             print("13a")
-            print(värde, 'är värdet just NU')
-            värde = readatom(q)
-
-            retur=extrafunc(rutan,värde)
-            rutan.atom = värde
-            #elif värde==rutan.atom:
-            #    nästavärde = readatom(q)
-            #    rutan.atom=nästavärde
-
-            print("det returnerade värdet från readatom sätts som rutan.atom är " + värde)
+            rutan.atom = readatom(q)
         try:
             print("14a")
             int(q.peek())
             rutan.num = readnum(q)
             print("40a")
         except (ValueError, TypeError): None
+        print("ute ur readgroup, nästa tecken i molekylen är " + q.peek() + ", numret är "+ str(rutan.num) + " och atomen är " + rutan.atom )
+        weight(rutan.atom, rutan.num)
+        
 
-
-        print("ute ur readAgroup, nästa tecken i molekylen är: " + q.peek())
-        print("numret är "+ str(rutan.num))
-        print("atomen är " +rutan.atom)
+        print(str("RUTAN.ATOM ÄR "+rutan.atom))
+        print(str("RUTAN.NUM ÄR "+str(rutan.num)))
         return rutan
 
 
-def extrafunc(rutan,värde):
-    print(rutan.atom,'är vår rutan.atom och värde är', värde)
-    if rutan.atom!=värde:
-        rutan.next=värde
-        print('Detta r vår rutan.next...', rutan.next)
-        return rutan.next
+
+def atombiblioteksskapare():
+    #Varje atom har en viss atomvikt. För att beräkna molekylvikten multipliceras atomvikten med siffran och därefter adderas alla vikter.
+    #skapar ett dict av alla atomer
+    with open(r'C:\Users\eyasu\OneDrive\TILDALABB_\LAB8\molekyler.txt', 'r') as  atomtextfil:
+        atombibliotek = {}
+        for rad in  atomtextfil:
+            rad = rad.split()
+            if not rad: 
+                continue
+            atombibliotek[rad[0]] = rad[1]
+    return atombibliotek
+temp=[]
+def weight(atom,num): #funktion för atom och dess antal multipliceras
+    print(atom, num, " atom och num jobbar vi med just nu")
+    atombibliotek = atombiblioteksskapare()
+    print("nu beräknas: "+ str(num)+ "för atomen"+ str(atom)+ str(num * float(atombibliotek[atom])))   #här säger vi vad beräknas för tillfället
+    atomvikt = num * float(atombibliotek[atom])
+    #atomviktssparare.enqueue([atom,int(num),float(atomvikt),float(atombibliotek[atom])])    #lägger till alla vikter i listan
+    atomviktssparare.enqueue([atomvikt, int(num)])
+    temp.append(atomvikt)
+    print(temp, "tempo")
     
 
 
-
 def readnum(q):
+
     #Om siffran är en 1a
     if q.peek() == "1":
         print("15a")
@@ -158,8 +218,6 @@ def readnum(q):
         int_siffersträng=int(siffersträng)
         
         return int_siffersträng
-    
-
 
 def readatom(q):
     print("22a")
@@ -201,32 +259,257 @@ def restutskrivare(q):
     return radslut
 ########################################################################################################################################################################
 
-
+g=[]
 def dela_upp_molekyl(molekyl):
+        global g
         q = LinkedQ()
         for varje_tecken in molekyl:
                 q.enqueue(varje_tecken)
+                tempkö.enqueue(varje_tecken)
+                g.append(varje_tecken) #Du lagrar ALLA tecken här. 
         q.enqueue("&")
+        tempkö.enqueue("&")
         kollamolekyl(q)
         
-
-def kollamolekyl(q):
+listadsparare=[]
+def kollamolekyl(q):#g för alla element i vår input. parantesochnummer för alla parantes och nummer som lagrats
+    global ff
     try:
+        atomtotal = []
+        
         mol = readformel(q)
         print("Formeln är syntaktiskt korrekt")
+        while not atomviktssparare.isEmpty():
+            r=atomviktssparare.dequeue()
+            listadsparare.append(r)
+        #print(listadsparare, "atomviktssparare")
+        #print(u, "tr0")
+        vikt=weightt(mol.atom, mol.num,mol)
+
+        print("molekylvikt ", vikt)
+
+        print("mv ä "+ str(sum(atomtotal)))
         mg = Molgrafik()
         mg.show(mol)
-        
+
     except Syntaxfel as fel:
         print(str(fel))
+
+molweight = 0 # tror vi måsta ha såhär här annars säger den att den inte är definierad när den returneras
+
+
+#atomviktssparare köar in objekt bestående av listor. 
+#objekt=[atom,int(num),float(atomvikt),float(atombibliotek[atom])]
+#atomvikt=float(atombibliotek[atom])*int(num)
+
+ramp=LinkedQ()
+sh=0
+def weightt(atom,num,mol):
+    
+
+    #global molweight #facit molvikt=ca 473  för "Ag2(NO(CO)2)3"
+    molweight=0
+    global sh
+    weightdict = atombiblioteksskapare()
+    if len(listadsparare)==0:
+        return slut
+    if len(listadsparare)!=0:
+        stog=[]
+        print(listadsparare, "listadsppp")
+
+        
+        for i in range(len(listadsparare.copy())):
+            if listadsparare[0]=="&":
+                listadsparare.remove(listadsparare[0])
+
+            print(3333333333333333333333, listadsparare)
+            if listadsparare[i]=='()':# and isinstance(listadsparare[i+1][0], float):
+                #Följande rader innan if-sats poppar paranteser och nummer
+                fg=listadsparare.pop(i)
+                print(f"u är {u}")
+                bg=u.pop(0)
+                #ramp.enqueue(fg) # ()
+                #ramp.enqueue(bg)# () 2
+                stog.append(fg) # ()  
+                stog.append(bg)# () 2
+                print(stog,"Fallet innan sh=0")
+                #print(listadsparare[i],696969)
+                if isinstance(listadsparare[i+1][0], float) and sh==0:# and not isinstance(listadsparare[i],str):# and sh!=0:
+                    print(listadsparare[i+1], listadsparare[i], listadsparare[i-1], "Fifflar med följande element pre-fg2")
+                    #while-loop (bör) appendar alla efterföljande element som är listor
+                    print(f"while-loop som(bör) appendar alla efterföljande element=listor.listadsparare är {listadsparare}")
+                    print(" ")
+                    while isinstance(listadsparare[i-1],list):
+                        print(f"listadsparare innaför whileloop:{listadsparare} medan elementet som är avsedd att poppas är {listadsparare[i-1]}")    
+                        print(" ")
+                        fg2=listadsparare[i-1]
+                        listadsparare.remove(fg2)
+                        print("fg2",fg2)
+                        stog.append(fg2)
+                print(stog, "LägesRAPPORT")
+                for k in range(len(stog)):
+                    print("itereras nu ",stog[k], k, "är indexet")
+                    if isinstance(stog[k],int):
+                        stog[k]=str(stog[k])
+                        strnmr=str(stog[k])
+                        break
+
+                break
+            
+            elif len(listadsparare)>2 and isinstance(listadsparare[i+1][0],float) and isinstance(listadsparare[i][0],float) and listadsparare[i+2]=='()':
+                print("elif! värdena:",listadsparare[i][0],"OCH!", listadsparare[i+1][0] )
+                print(f"{listadsparare} är vår lista i vår första elif-sats. u är {u}")
+                for i in range(len(listadsparare)):
+                    if listadsparare[i]=="()":
+                        stog.append(listadsparare[i])
+                        bus = u.pop(0)
+                        stog.append(bus)
+                tiff=0
+                #tiff=i
+                print(f"listadsparare utanför andra whileloop:{listadsparare}, tiff är {tiff} som ger {listadsparare[tiff]}")    
+                print(" ")
+                print(f"findus {stog}")
+                while isinstance(listadsparare[tiff],list):
+                    print(f"listadsparare innanför andra whileloop:{listadsparare} medan elementet som är avsedd att poppas är {listadsparare[tiff]}")    
+                    fg2=listadsparare[tiff]
+                    listadsparare.remove(fg2)
+                    print("fg2 och tiff och listadsparare",fg2, tiff, listadsparare)
+                    stog.append(fg2)
+                    #tiff=tiff+1
+                print(f"skohon {stog} samt {listadsparare} slutligen {i}")
+                fg=listadsparare.pop(0)
+                print(fg, "fg atm")
+                ramp.enqueue(fg) # ()
+                stog.append(fg) # () 
+                if isinstance(listadsparare[0][0], float):# and sh!=0:
+                    fg2=listadsparare.pop(0)
+                    print(fg2, "fg2 atm")
+                    stog.append(fg2)
+                
+
+                print(8888888888, stog)
+                break
+            elif len(listadsparare)<3:
+                fg=listadsparare.pop()
+                stog.append(fg)
+                print(listadsparare, "ÄR VÅR LISTA")
+                break
+                
+        LL=[]
+        print("???????", stog)
+
+
+        stog = [[element] if not isinstance(element, list) else element for element in stog]
+
+        vikter=[]
+        nummer=[]
+        ##atomvikt = None
+        #num = None
+        for elem in stog.copy():
+            #print("följande itereras nu: ", elem)
+            indexelem=stog.copy().index(elem)
+            for val in elem:
+                
+                if isinstance(val, float):
+                    print(val, elem, "Första if-sats")
+                    vikter.append(val)
+                elif isinstance(val, int) and not str(stog.copy()[indexelem-1][0]).isalpha() and  stog.copy()[indexelem-1][0]!="&":    #isinstance(stog.copy()[indexelem-1], str)
+                    #print(elem, "kommer raderaS??")
+                    nummer.append(val)
+                    stog.remove(elem)
+                    break
+                
+            
+
+        
+        print(vikter, "atomvikter")
+        print(nummer, "nummer")
+
+        print(stog, "stog efter borttagning")
+      
+
+
+            
+        print(listadsparare, "efter poppet av första parantes och första atomen.")
+        for i in range(len(vikter)):
+            atomvikt=vikter[i]
+            num=nummer[i]
+
+            #print(str(float(atomvikt)/num), "simp")
+            for atom in weightdict:
+                
+                if str(weightdict[atom]) == str(float(atomvikt)/num):
+                    #print(str(float(atomvikt)/num), "PASS")
+                    #ramp.enqueue(atom)
+                    stog.append(atom)# () 2 Ag
+
+                    
+        stog = [elem[0] if isinstance(elem, list) else elem for elem in stog]
+
+        print(stog, "före omstrukturering")
+
+
+        bokstäver = []
+        övrigt = []
+        #if len(stog)==5:
+        for elem in stog:
+            if isinstance(elem, str) and elem == '()':
+                övrigt.append(elem)
+            elif elem.isdigit():
+                nostr=int(elem)
+                övrigt.append(nostr)
+            elif isinstance(elem, str) and elem.isalpha():
+                bokstäver.append(elem)
+                
+        new_stog = bokstäver + övrigt
+        print(new_stog, "efter omstrukturering")
+
+
+    sh=0
+    #print(new_stog,"PPP och sh= ", sh, vikter)
+    molweight=vikter[sh]
+    atom=new_stog[sh]
+    print(f"molvikten för {atom} (som vi köat in i ramp) är {molweight}, samtidigt som mol.atom ((pot. ej relevant)) är {mol.atom} , och sh= {sh}")
+    sh=sh+1
+    if mol.down!=None:
+        print("ner")
+        try:
+            slut=float(molweight)
+            slut=slut+weightt(atom,num,mol.down)
+            slut=mol.num*slut
+            print(" I parentes *", mol.num, "=", slut)
+            molweight=molweight+slut
+        except ValueError:
+            pass
+
+        
+        return molweight
+    else:
+        if mol.next!=None:
+            print("vänster")
+            try:
+                molweight += float(weightt(atom,num,mol.next))
+            except ValueError:
+                pass
+    return molweight
+
+
+
+
+
 
 
 
 def main():
-    molekyl = 'Ag(NO)3'#input("skriv molekyl: ")
+    molekyl = "Ag2(NO(CO)2)3" #input("skriv molekyl: ")
+    #här skapar vi ett bibliotek för 
+    atombiblioteksskapare()
     dela_upp_molekyl(molekyl)
+    
 
   
 
-if __name__ == "__main__":
-    main()
+
+main()
+
+
